@@ -21,6 +21,8 @@ import numpy as np
 # importujemy biblioteke pomagajaca nam w operacjach tensorowych (niezbedna do poczatkowych cwiczen)
 import tensorflow as tf
 
+import cv2
+
 
 # ladujemy przykladowe dane wejsciowe (klasyczny juz zbior danych z recznie pisanymi cyframi)
 data = k_mnist.load_data()
@@ -253,7 +255,7 @@ def exercise_five():
     # w wypisanych wczesniej informacjach mozna latwo spradzic ile kanalow ma warstwa o danym numerze (i ktora to)
     # layer_to_preview = 4  # numer warstwy, ktorej aktywacje podgladamy
 
-    layer_to_preview = 1  # numer warstwy, ktorej aktywacje podgladamy
+    layer_to_preview = 65  # numer warstwy, ktorej aktywacje podgladamy
     # channel_to_preview = 16   # numer kanalu w tejze warstwie
     channel_to_preview = 0  # numer kanalu w tejze warstwie
     get_activations = k.function([model.layers[0].input], [model.layers[layer_to_preview].output])
@@ -271,8 +273,58 @@ def exercise_five():
 
 
 
+def home_one_playground(model,image_path):
+    layers = dict([(layer.name, layer.output) for layer in model.layers])
+
+    # image_path = 'nosacz.jpg'
+    image = k_image.load_img(image_path, target_size=(224, 224))
+    x = k_image.img_to_array(image)  # kolejne linie dodatkowo dostosowuja obraz pod dana siec
+    x = np.expand_dims(x, axis=0)
+    x = k_mobilenet_v2.preprocess_input(x)
+
+    predictions = model.predict(x)
+    print('Predicted class:', k_mobilenet_v2.decode_predictions(predictions, top=5)[0])\
+
+    layer_to_preview=65
+    channel_to_preview=200
+    get_activations = k.function([model.layers[0].input], [model.layers[layer_to_preview].output])
+    activations = get_activations([x])
+    print(type(activations))
+    print(len(activations))
+    print(activations)
+    print(type(activations[0]))
+    print(activations[0])
+    print(activations[0].shape)
+    print(len(activations[0]))
+    print(activations[0][0,:,:,0])
+    print(activations[0][0,:,:,0].shape)
+    print("'''")
+    print(activations[0][0,:,:,channel_to_preview])
+    img = plt.image()
+
+
+
+
+def home_one_conc_and_show_im(out_image_list):
+    res_image_list=[]
+    for img in out_image_list:
+        res_image_list.append(cv2.resize(img, dsize=(28, 28), interpolation=cv2.INTER_CUBIC))
+    for img in res_image_list:
+        plt.imshow(img, cmap="hot")
+        plt.show()
+    pass
+
+
 def home_one_get_image_from_activation_and_channel(activations,channel_to_preview):
-    return [[[1.0, 1.0, 1.0]]]
+    print(activations[0])
+    # pic=plt.imshow(activations[0][0, :, :, channel_to_preview], cmap="viridis")
+    # print(type(pic))
+    # print(pic)
+    # print("\n\n\n\n\n\n")
+    # array=np.array(pic)
+    # print(type(array))
+    # print(array)
+    return activations[0][0,:,:,channel_to_preview]
 
 
 def home_one_print(model,image_path):
@@ -280,7 +332,6 @@ def home_one_print(model,image_path):
 
     # image_path = 'nosacz.jpg'
     image = k_image.load_img(image_path, target_size=(224, 224))
-    # TODO: zastap None powyzej zmieniajac rozmiar na taki, jaki przyjmuje wejscie sieci (skorzystaj z wypisanego info)
     x = k_image.img_to_array(image)  # kolejne linie dodatkowo dostosowuja obraz pod dana siec
     x = np.expand_dims(x, axis=0)
     x = k_mobilenet_v2.preprocess_input(x)
@@ -293,32 +344,35 @@ def home_one_print(model,image_path):
     channel_to_preview = 0  # numer kanalu w tejze warstwie
     get_activations = k.function([model.layers[0].input], [model.layers[layer_to_preview].output])
     activations = get_activations([x])
-    plt.imshow(activations[0][0, :, :, channel_to_preview], cmap="viridis")
-    plt.show()
+    # plt.imshow(activations[0][0, :, :, channel_to_preview], cmap="viridis")
+    # plt.show()
 
     out_image_list=[]
-    print("'''")
-    for l in model.layers:
-        print(type(l.output))
-        print(l.output)
-        print(l.output.shape)
-        break
-    print("'''")
+    # print("'''")
+    # for l in model.layers:
+    #     print(type(l.output))
+    #     print(l.output)
+    #     print(l.output.shape)
+    #     break
+    # print("'''")
 
     for i, (name, layer) in enumerate(layers.items()):
         print("Layer {0} : {1}".format(i, (name, layer)))
         if len(layer.shape) < 3 :
             continue
-        if i<1:
-            continue
+        # if i<1:
+        #     continue
+        if i<65:# TODO remove
+            continue#
         layer_to_preview = i  # numer warstwy, ktorej aktywacje podgladamy
         get_activations = k.function([model.layers[0].input], [model.layers[layer_to_preview].output])
         activations = get_activations([x])
         for n in range(layer.shape[3]):
             channel_to_preview = n  # numer kanalu w tejze warstwie
             out_image_list.append(home_one_get_image_from_activation_and_channel(activations, channel_to_preview))
-
+        break # TODO remove
     print(len(out_image_list))
+    home_one_conc_and_show_im(out_image_list)
 
 
 
@@ -328,11 +382,12 @@ def home_one_print(model,image_path):
 
 def home_one():
     model = k_mobilenet_v2.MobileNetV2(weights='imagenet', include_top=True)
+    # home_one_playground(model,'nosacz.jpg')
     home_one_print(model,'nosacz.jpg')
-    image_path = 'nosacz.jpg'
-    image = k_image.load_img(image_path, target_size=(10, 10))
-    print(image)
-    image_matrix=k_image.img_to_array(image)
+    # image_path = 'nosacz.jpg'
+    # image = k_image.load_img(image_path, target_size=(10, 10))
+    # print(image)
+    # image_matrix=k_image.img_to_array(image)
     # print(image_matrix)
 
 
@@ -344,7 +399,7 @@ def main():
     #exercise_two()
     #exercise_three()
     # exercise_four()
-    #exercise_five()
+    # exercise_five()
     home_one()
     pass
 

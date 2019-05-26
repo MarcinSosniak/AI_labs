@@ -1,0 +1,3 @@
+https://kite.com/python/examples/4887/pil-convert-between-a-pil-%60image%60-and-a-numpy-%60array%60
+https://matplotlib.org/users/image_tutorial.html
+https://stackoverflow.com/questions/48121916/numpy-resize-rescale-image
