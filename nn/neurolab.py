@@ -307,16 +307,19 @@ def home_one_playground(model,image_path):
 
 def home_one_conc_and_show_im(out_image_list):
     res_image_list=[]
+    i=2
     for img in out_image_list:
         res_image_list.append(cv2.resize(img, dsize=(28, 28), interpolation=cv2.INTER_CUBIC))
     for img in res_image_list:
         plt.imshow(img, cmap="hot")
         plt.show()
+        # if i<=0: # TODO REMOVE
+        #     break
     pass
 
 
 def home_one_get_image_from_activation_and_channel(activations,channel_to_preview):
-    print(activations[0])
+    # print(activations[0])
     # pic=plt.imshow(activations[0][0, :, :, channel_to_preview], cmap="viridis")
     # print(type(pic))
     # print(pic)
