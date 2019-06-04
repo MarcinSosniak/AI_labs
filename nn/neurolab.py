@@ -274,47 +274,87 @@ def exercise_five():
 
 
 def home_one_playground(model,image_path):
-    layers = dict([(layer.name, layer.output) for layer in model.layers])
 
-    # image_path = 'nosacz.jpg'
-    image = k_image.load_img(image_path, target_size=(224, 224))
-    x = k_image.img_to_array(image)  # kolejne linie dodatkowo dostosowuja obraz pod dana siec
-    x = np.expand_dims(x, axis=0)
-    x = k_mobilenet_v2.preprocess_input(x)
+    test = [[1.0,1.0,1.0],[0.5,0.5,0.5],[0.,0.,0.]]
+    testNA = np.array(test)
+    plt.imshow(testNA,cmap="hot")
+    plt.show()
+    plt.imshow(home_one_add_horizontal(testNA,testNA),cmap='hot')
+    plt.show()
+    plt.imshow(home_one_add_horizontal_list([testNA, testNA]), cmap='hot')
+    plt.show()
 
-    predictions = model.predict(x)
-    print('Predicted class:', k_mobilenet_v2.decode_predictions(predictions, top=5)[0])\
 
-    layer_to_preview=65
-    channel_to_preview=200
-    get_activations = k.function([model.layers[0].input], [model.layers[layer_to_preview].output])
-    activations = get_activations([x])
-    print(type(activations))
-    print(len(activations))
-    print(activations)
-    print(type(activations[0]))
-    print(activations[0])
-    print(activations[0].shape)
-    print(len(activations[0]))
-    print(activations[0][0,:,:,0])
-    print(activations[0][0,:,:,0].shape)
-    print("'''")
-    print(activations[0][0,:,:,channel_to_preview])
-    img = plt.image()
+def home_one_add_horizontal(img1,img2): #assumes same size
+    out = np.copy(img1)
+    out = np.append(out,img2,axis=1)
+    return out
 
+def home_one_add_horizontal_list(img_list): #assumes same size
+    out = np.copy(img_list[0])
+    skip_first=True
+    for img in img_list:
+        if skip_first:
+            skip_first=False
+            continue
+        out=np.append(out,img,axis=1)
+    return out
+
+def home_one_add_vertical(img1,img2): #assumes same size
+    out = np.copy(img1)
+    out = np.append(out,img2,axis=0)
+    return out
+
+
+def home_one_add_vertical_list(img_list): #assumes same size
+    out = np.copy(img_list[0])
+    skip_first=True
+    for img in img_list:
+        if skip_first:
+            skip_first=False
+            continue
+        out=np.append(out,img,axis=0)
+    return out
 
 
 
 def home_one_conc_and_show_im(out_image_list):
+    print("")
+    print("")
+    print(len(out_image_list))
     res_image_list=[]
-    i=2
-    for img in out_image_list:
-        res_image_list.append(cv2.resize(img, dsize=(28, 28), interpolation=cv2.INTER_CUBIC))
-    for img in res_image_list:
-        plt.imshow(img, cmap="hot")
-        plt.show()
-        # if i<=0: # TODO REMOVE
-        #     break
+    single_size=28
+    # for img in out_image_list:
+        # res_image_list.append(cv2.resize(img, dsize=(single_size,single_size), interpolation=cv2.INTER_CUBIC))
+    res_image_list= list(map(lambda img: cv2.resize(img, dsize=(single_size,single_size), interpolation=cv2.INTER_CUBIC),out_image_list))
+    print(len(res_image_list))
+    number_of_pics_in_row=30
+    black_one = np.zeros((single_size, single_size))
+    k = len(res_image_list) %  number_of_pics_in_row
+    if not k == 0:
+        for i in range(number_of_pics_in_row - k):
+            res_image_list.append(black_one)
+
+    print(len(res_image_list))
+    res_image_list_list=[res_image_list[number_of_pics_in_row*i:number_of_pics_in_row*(i+1)] for i in range(len(res_image_list)//number_of_pics_in_row)]
+    print(len(res_image_list_list))
+    print(len(res_image_list_list[0]))
+    # for img in res_image_list:
+    #     plt.imshow(img, cmap="hot")
+    #     plt.show()
+    #     # if i<=0: # TODO REMOVE
+    #     #     break
+    horizontal_img=[]
+    for img_list in res_image_list_list:
+        horizontal_img.append(home_one_add_horizontal_list(img_list))
+    print(len(horizontal_img))
+    print(horizontal_img[0].shape)
+    out=None
+    out=home_one_add_vertical_list(horizontal_img)
+    plt.imshow(out, cmap="hot")
+    plt.show()
+    print(out)
+    print(out.shape)
     pass
 
 
@@ -363,8 +403,8 @@ def home_one_print(model,image_path):
         print("Layer {0} : {1}".format(i, (name, layer)))
         if len(layer.shape) < 3 :
             continue
-        # if i<1:
-        #     continue
+        if i<1:
+            continue
         if i<65:# TODO remove
             continue#
         layer_to_preview = i  # numer warstwy, ktorej aktywacje podgladamy
@@ -395,6 +435,79 @@ def home_one():
 
 
 
+
+def home_two_run_single(model,class_name,x):
+    pass
+
+
+def add_dark_square(img_array,posx,posy,size):
+    for i in range(posx,posx+size):
+        for k in range(posy,posy+size):
+            img_array[0][i][k][0]=0
+            img_array[0][i][k][1]=0
+            img_array[0][i][k][2]=0
+
+def add_to_all(out_table,pos_x,pos_y,size,outcome):
+    for i in range(224):
+        for k in range(224):
+            if (i>=pos_x and i<(pos_x+size) ) or (k>=pos_y and k<(pos_y+ size)):
+                continue
+            out_table[i][k][0]=out_table[i][k][0]+outcome
+            out_table[i][k][1]=out_table[i][k][1]+1
+
+
+
+def home_two():
+    model = k_mobilenet_v2.MobileNetV2(weights='imagenet', include_top=True)
+    image_path = 'RTR6S1V.jpg'
+    #224=7*2^5
+
+    image = k_image.load_img(image_path, target_size=(224, 224))
+    print("running")
+    # TODO: zastap None powyzej zmieniajac rozmiar na taki, jaki przyjmuje wejscie sieci (skorzystaj z wypisanego info)
+    x = k_image.img_to_array(image)  # kolejne linie dodatkowo dostosowuja obraz pod dana siec
+    x = np.expand_dims(x, axis=0)
+    x = k_mobilenet_v2.preprocess_input(x)
+    out_array=np.zeros((224,224,2)) # first is sum of % outcomes, second is number of tries later they will be divided
+    size = 7*2 # 227/size must be int
+    for i1 in range(224-size):
+        for k1 in range(224-size):
+            x_clone=np.copy(x)
+            add_dark_square(x_clone, i1, k1, size)
+            predictions= model.predict([x_clone])
+            add_to_all(out_array, i1 ,k1, size, k_mobilenet_v2.decode_predictions(predictions, top=5)[0][0][2]) # TODO cahange 0.5 to actual outcome
+
+
+    heat_map= np.zeros((224,224))
+
+    min_val=1
+    max_val=0
+    for i in range(224):
+        for k in range(224):
+            heat_map[i][k]=out_array[i][k][0]/out_array[i][k][1]
+            if heat_map[i][k]<min_val:
+                min_val=heat_map[i][k]
+            if heat_map[i][k]>max_val:
+                max_val=heat_map[i][k]
+
+    plt.imshow(heat_map, cmap="hot",vmin=min_val,vmax=max_val)
+    plt.show()
+
+    print(heat_map)
+    print(max_val)
+    print(min_val)
+    print("\n\n\n\n")
+
+    print(type(x))
+    print(x)
+    print(x.shape)
+    predictions = model.predict(x)
+    print('Predicted class:', k_mobilenet_v2.decode_predictions(predictions, top=5)[0])
+    print('Predicted class:', k_mobilenet_v2.decode_predictions(predictions, top=5)[0][0][1])
+
+
+
+
 def main():
     # TODO: tu wybieraj wykonywane cwiczenie (wykonuj je zgodnie z kolejnoscia)
     #intro()
@@ -403,7 +516,8 @@ def main():
     #exercise_three()
     # exercise_four()
     # exercise_five()
-    home_one()
+    # home_one()
+    home_two()
     pass
 
 
